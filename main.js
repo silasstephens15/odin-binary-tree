@@ -4,6 +4,7 @@ class Tree {
   constructor(arr) {
     this.arr = mergeSort(arr);
     this.root = this.buildTree(this.arr, 0, this.arr.length - 1);
+    this.parentNode = {};
   }
   buildTree(arr, start, end) {
     if (start > end) {
@@ -36,37 +37,82 @@ class Tree {
     }
   }
   deleteItem(value) {
-    const node = this.find(value, true);
+    const combined = this.find(value, true);
+    const node = combined.result;
+    const parent = combined.parent;
     if (node.right === null && node.left === null) {
+      if (parent.left === node) {
+        parent.left = null;
+      } else {
+        parent.right = null;
+      }
+    } else {
+      if (node.left === null) {
+        if (parent.right === node) {
+          parent.right = node.right;
+        } else {
+          parent.left = node.right;
+        }
+      }
+      if (node.right === null) {
+        if (parent.right === node) {
+          parent.right = node.left;
+        } else {
+          parent.left = node.left;
+        }
+      }
+      if (node.right !== null && node.left !== null) {
+        this.deleteTwoChild(node, parent);
+      }
     }
 
     this.arr.splice(this.arr.indexOf(value), 1);
   }
-  find(value, returnParent = false, node = this.root, parent = {}) {
+  deleteTwoChild(node, parent) {
+    let replacement = node.right;
+    while (replacement.left !== null) {
+      replacement = replacement.left;
+    }
+    this.deleteItem(replacement.value);
+    replacement.right = node.right;
+    replacement.left = node.left;
+    if (parent === null) {
+      this.root = replacement;
+      return;
+    }
+    if (parent.left === node) {
+      parent.left = replacement;
+    } else {
+      parent.right = replacement;
+    }
+  }
+  find(value, returnParent = false, node = this.root) {
     let result = {};
+    if (node.value > value) {
+      if (node.left !== null) {
+        this.parentNode = node;
+        result = this.find(value, false, node.left);
+      } else {
+        return null;
+      }
+    }
+    if (node.value < value) {
+      if (node.right !== null) {
+        this.parentNode = node;
+        result = this.find(value, false, node.right);
+      } else {
+        return null;
+      }
+    }
+    if (Object.keys(this.parentNode).length === 0) {
+      return { result: node, parent: null };
+    }
     if (node.value === value) {
       return node;
     }
-    if (node.value > value) {
-      if (node.left !== null) {
-        parent.value = node.value;
-        parent.left = node.left;
-        parent.right = node.right;
-        result = this.find(value, false, node.left, parent);
-      } else {
-        return null;
-      }
-    } else {
-      if (node.right !== null) {
-        parent.value = node.value;
-        parent.left = node.left;
-        parent.right = node.right;
-        result = this.find(value, false, node.right, parent);
-      } else {
-        return null;
-      }
-    }
     if (returnParent) {
+      const parent = this.parentNode;
+      this.parentNode = {};
       return { result, parent };
     } else {
       return result;
@@ -92,4 +138,3 @@ class Tree {
 
 const tree = new Tree([1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324]);
 tree.prettyPrint();
-console.log(tree.find(7, true));
