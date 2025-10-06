@@ -88,6 +88,9 @@ class Tree {
   }
   find(value, returnParent = false, node = this.root) {
     let result = {};
+    if (node.value === value) {
+      return node;
+    }
     if (node.value > value) {
       if (node.left !== null) {
         this.parentNode = node;
@@ -107,9 +110,6 @@ class Tree {
     if (Object.keys(this.parentNode).length === 0) {
       return { result: node, parent: null };
     }
-    if (node.value === value) {
-      return node;
-    }
     if (returnParent) {
       const parent = this.parentNode;
       this.parentNode = {};
@@ -118,7 +118,7 @@ class Tree {
       return result;
     }
   }
-  levelOrderForEach(callback) {
+  levelOrderForEach(callback, modify = false) {
     if (callback === undefined) {
       throw new Error("Expected one argument, received none.");
     }
@@ -127,7 +127,13 @@ class Tree {
     queue.push(this.root);
     while (queue.length > 0) {
       const item = queue[0];
-      queue[0] = callback(queue[0]);
+      if (modify) {
+        queue[0] = callback(queue[0]);
+        result.push(queue[0]);
+      } else {
+        const temp = callback(queue[0]);
+        result.push(temp);
+      }
       if (item.left !== null) {
         queue.push(item.left);
       }
@@ -136,6 +142,7 @@ class Tree {
       }
       queue.shift();
     }
+    return result;
   }
   inOrderForEach(callback, node = this.root, result = []) {
     if (callback === undefined) {
@@ -165,7 +172,7 @@ class Tree {
     }
     return result;
   }
-  postOrderForEach(callback, node = this.root, result = []) {
+  postOrderForEach(callback, node = this.root, result = [], modify = false) {
     if (callback === undefined) {
       throw new Error("Expected one argument, received none.");
     }
@@ -175,9 +182,72 @@ class Tree {
     if (node.right !== null) {
       this.postOrderForEach(callback, node.right, result);
     }
-    callback(node);
-    result.push(node.value);
+    if (modify) {
+      callback(node);
+      result.push(node.value);
+    } else {
+      const temp = callback(node);
+      result.push(temp);
+    }
     return result;
+  }
+  height(value) {
+    const node = this.find(value);
+    if (node === null) {
+      return node;
+    }
+    function findHeight(node) {
+      if (node === null) {
+        return -1;
+      }
+      let left = findHeight(node.left);
+      let right = findHeight(node.right);
+      if (left > right) {
+        return (left += 1);
+      } else {
+        return (right += 1);
+      }
+    }
+    return findHeight(node);
+  }
+  depth(value) {
+    let depth = 0;
+    let node = this.root;
+    while (value !== node.value) {
+      if (node.right === null && node.left === null) {
+        return null;
+      }
+      if (value < node.value) {
+        node = node.left;
+      } else {
+        node = node.right;
+      }
+      depth++;
+    }
+    return depth;
+  }
+  isBalanced(node = this.root) {
+    function checkBalance(node) {
+      if (node === null) {
+        return { height: 0, balanced: true };
+      }
+      const left = checkBalance(node.left);
+      const right = checkBalance(node.right);
+      if (!left.balanced || !right.balanced) {
+        return { height: -1, balanced: false };
+      }
+      if (Math.abs(left.height - right.height) > 1) {
+        return { height: -1, balanced: false };
+      }
+      const currentHeight = 1 + Math.max(left.height, right.height);
+      return { height: currentHeight, balanced: true };
+    }
+    const result = checkBalance(node);
+    return result.balanced;
+  }
+  rebalance() {
+    this.arr = this.inOrderForEach((node) => node);
+    this.root = this.buildTree(this.arr, 0, this.arr.length - 1);
   }
   prettyPrint(node = this.root, prefix = "", isLeft = true) {
     if (node === null) {
@@ -197,5 +267,21 @@ class Tree {
   }
 }
 
-const tree = new Tree([1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324]);
-tree.prettyPrint();
+function randomArray(length) {
+  let arr = [];
+  for (let i = 0; i < length; i++) {
+    arr.push(Math.floor(Math.random() * 1000));
+  }
+  return arr;
+}
+
+const tree = new Tree(randomArray(100));
+console.log(tree.isBalanced());
+tree.insert(100);
+tree.insert(101);
+tree.insert(102);
+tree.insert(103);
+tree.insert(104);
+console.log(tree.isBalanced());
+tree.rebalance();
+console.log(tree.isBalanced());
