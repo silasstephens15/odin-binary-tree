@@ -118,6 +118,67 @@ class Tree {
       return result;
     }
   }
+  levelOrderForEach(callback) {
+    if (callback === undefined) {
+      throw new Error("Expected one argument, received none.");
+    }
+    let queue = [];
+    let result = [];
+    queue.push(this.root);
+    while (queue.length > 0) {
+      const item = queue[0];
+      queue[0] = callback(queue[0]);
+      if (item.left !== null) {
+        queue.push(item.left);
+      }
+      if (item.right !== null) {
+        queue.push(item.right);
+      }
+      queue.shift();
+    }
+  }
+  inOrderForEach(callback, node = this.root, result = []) {
+    if (callback === undefined) {
+      throw new Error("Expected one argument, received none.");
+    }
+    if (node.left !== null) {
+      this.inOrderForEach(callback, node.left, result);
+    }
+    callback(node);
+    result.push(node.value);
+    if (node.right !== null) {
+      this.inOrderForEach(callback, node.right, result);
+    }
+    return result;
+  }
+  preOrderForEach(callback, node = this.root, result = []) {
+    if (callback === undefined) {
+      throw new Error("Expected one argument, received none.");
+    }
+    callback(node);
+    result.push(node.value);
+    if (node.left !== null) {
+      this.preOrderForEach(callback, node.left, result);
+    }
+    if (node.right !== null) {
+      this.preOrderForEach(callback, node.right, result);
+    }
+    return result;
+  }
+  postOrderForEach(callback, node = this.root, result = []) {
+    if (callback === undefined) {
+      throw new Error("Expected one argument, received none.");
+    }
+    if (node.left !== null) {
+      this.postOrderForEach(callback, node.left, result);
+    }
+    if (node.right !== null) {
+      this.postOrderForEach(callback, node.right, result);
+    }
+    callback(node);
+    result.push(node.value);
+    return result;
+  }
   prettyPrint(node = this.root, prefix = "", isLeft = true) {
     if (node === null) {
       return;
